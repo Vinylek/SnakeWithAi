@@ -1,12 +1,13 @@
 /*
     model.js — Le "Model" du pattern MVC : les règles du jeu qui modifient l'état.
     Ici, pas de dessin ni de clavier : seulement des calculs sur l'objet state
-    (placer les obstacles, avancer le serpent, détecter les collisions, etc.).
+    (placer les obstacles et la pomme, avancer le serpent, détecter les collisions...).
 */
 
 import {
     COLUMNS, ROWS, SPRITES, OBSTACLE_COUNT, OBSTACLE_SAFE_RADIUS,
-    DIRECTIONS, INITIAL_SNAKE, INITIAL_DIRECTION, INITIAL_SPEED_MS, GAME_STATUS
+    DIRECTIONS, INITIAL_SNAKE, INITIAL_DIRECTION, INITIAL_SPEED_MS, GAME_STATUS,
+    FOOD_POINTS
 } from "./config.js";
 
 // On tire un nombre entier au hasard entre 0 (inclus) et max (exclu).
@@ -34,18 +35,12 @@ function isInsideSafeZone(cell, snake) {
     });
 }
 
-// On vérifie si la case est déjà prise par la pomme ou par un autre obstacle.
-function isOccupied(cell, state) {
-    if (isSameCell(cell, state.food)) return true;
-    return state.obstacles.some(obstacle => isSameCell(cell, obstacle));
-}
-
 // On décide si on a le droit de poser un obstacle sur cette case.
 function canPlaceObstacle(cell, state) {
     // Pas sur la première ligne : le haut du dessin (2 cases de haut) sortirait du canvas
     if (cell.y === 0) return false;
     if (isInsideSafeZone(cell, state.snake)) return false;
-    return !isOccupied(cell, state);
+    return !hitsObstacle(cell, state);
 }
 
 // On choisit au hasard un des dessins d'obstacles (rocher ou arbre).
@@ -55,7 +50,7 @@ function getRandomObstacleSprite() {
 
 // On remplit la carte d'obstacles placés au hasard, en dehors de la zone protégée
 // autour du serpent. On tire des cases jusqu'à en avoir assez de valides.
-export function createObstacles(state) {
+function createObstacles(state) {
     state.obstacles = [];
     // Garde-fou : si la carte est trop petite pour tout placer, on s'arrête quand même
     const maxAttempts = OBSTACLE_COUNT * 50;
@@ -70,8 +65,41 @@ export function createObstacles(state) {
     }
 }
 
-// On remet la partie à zéro : serpent au départ, score à 0, nouvelle carte d'obstacles.
-// Le statut n'est pas touché ici : c'est le contrôleur qui décide quand on joue.
+// On vérifie si la case est occupée par un des morceaux du serpent.
+function isOnSnake(cell, snake) {
+    return snake.some(part => isSameCell(cell, part));
+}
+
+// On liste toutes les cases où la pomme a le droit d'apparaître :
+// ni sur le serpent, ni sur un obstacle.
+function getFreeCells(state) {
+    const freeCells = [];
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLUMNS; x++) {
+            const cell = { x, y };
+            if (!isOnSnake(cell, state.snake) && !hitsObstacle(cell, state)) {
+                freeCells.push(cell);
+            }
+        }
+    }
+    return freeCells;
+}
+
+// On pose la pomme sur une case libre tirée au hasard.
+// On pioche dans la liste des cases libres plutôt que de tirer des cases au hasard
+// jusqu'à tomber sur une bonne : comme ça, on est sûr de trouver du premier coup.
+function placeFood(state) {
+    const freeCells = getFreeCells(state);
+    // Cas extrême : le serpent remplit tout le plateau, il n'y a plus de place
+    if (freeCells.length === 0) {
+        state.food = null;
+        return;
+    }
+    state.food = freeCells[getRandomInt(freeCells.length)];
+}
+
+// On remet la partie à zéro : serpent au départ, score à 0, nouvelle carte d'obstacles
+// et nouvelle pomme. Le statut n'est pas touché : c'est le contrôleur qui décide quand on joue.
 export function resetGame(state) {
     state.snake = INITIAL_SNAKE.map(part => ({ ...part }));
     state.direction = INITIAL_DIRECTION;
@@ -81,6 +109,8 @@ export function resetGame(state) {
     state.level = 1;
     state.speedMs = INITIAL_SPEED_MS;
     createObstacles(state);
+    // La pomme en dernier, pour qu'elle évite les obstacles qu'on vient de poser
+    placeFood(state);
 }
 
 // On vérifie si deux directions sont opposées (droite/gauche ou haut/bas) :
@@ -119,9 +149,11 @@ function hitsObstacle(cell, state) {
 // On vérifie si la tête va rentrer dans le corps du serpent.
 // On ignore le dernier morceau : la queue avance en même temps que la tête,
 // donc sa case sera libre au moment où la tête y arrive.
+// (Quand le serpent mange, la queue ne bouge pas, mais la pomme n'est jamais sur
+// le serpent : la tête ne peut donc pas être sur la queue à ce moment-là.)
 function hitsOwnBody(cell, snake) {
     const bodyWithoutTail = snake.slice(0, -1);
-    return bodyWithoutTail.some(part => isSameCell(cell, part));
+    return isOnSnake(cell, bodyWithoutTail);
 }
 
 // On regroupe les trois cas qui font perdre : mur, obstacle, ou son propre corps.
@@ -129,22 +161,45 @@ function isDeadlyCell(cell, state) {
     return isOutOfBounds(cell) || hitsObstacle(cell, state) || hitsOwnBody(cell, state.snake);
 }
 
-// On fait avancer le serpent d'une case : on ajoute une nouvelle tête devant
-// et on retire le dernier morceau. Sa longueur ne change donc pas.
-function moveSnake(state, newHead) {
+// On vérifie si la tête arrive sur la pomme.
+function isOnFood(cell, state) {
+    return state.food !== null && isSameCell(cell, state.food);
+}
+
+// On fait avancer le serpent d'une case : on ajoute une nouvelle tête devant,
+// et on retire le dernier morceau SAUF s'il vient de manger. C'est tout le secret
+// de la croissance : en gardant la queue, le serpent gagne une case de longueur.
+function moveSnake(state, newHead, hasEaten) {
     state.snake.unshift(newHead);
-    state.snake.pop();
+    if (!hasEaten) {
+        state.snake.pop();
+    }
+}
+
+// Le serpent a mangé la pomme : on gagne des points et une nouvelle pomme apparaît.
+// À appeler APRÈS moveSnake, pour que la nouvelle pomme évite aussi la nouvelle tête.
+function eatFood(state) {
+    state.score += FOOD_POINTS;
+    placeFood(state);
 }
 
 // Un "pas" du jeu, appelé à chaque tour de boucle : on applique la direction demandée,
-// on regarde où la tête va arriver, puis soit on perd, soit on avance.
+// on regarde où la tête va arriver, puis soit on perd, soit on avance (en mangeant
+// peut-être la pomme au passage).
+// Renvoie true si le serpent a mangé, pour que le contrôleur joue le son et mette à jour le score.
 export function updateGame(state) {
     state.direction = state.nextDirection;
     const newHead = getNextHeadPosition(state);
 
     if (isDeadlyCell(newHead, state)) {
         state.status = GAME_STATUS.GAME_OVER;
-        return;
+        return false;
     }
-    moveSnake(state, newHead);
+
+    const hasEaten = isOnFood(newHead, state);
+    moveSnake(state, newHead, hasEaten);
+    if (hasEaten) {
+        eatFood(state);
+    }
+    return hasEaten;
 }

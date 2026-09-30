@@ -63,7 +63,9 @@ function drawObstacles(state) {
 
 // On dessine la pomme normale, et la pomme dorée si elle est présente.
 function drawFood(state) {
-    drawSprite(SPRITES.food, state.food.x, state.food.y);
+    if (state.food) {
+        drawSprite(SPRITES.food, state.food.x, state.food.y);
+    }
     if (state.specialFood) {
         drawSprite(SPRITES.specialFood, state.specialFood.x, state.specialFood.y);
     }

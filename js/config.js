@@ -197,7 +197,7 @@ export const state = {
     snake: INITIAL_SNAKE.map(part => ({ ...part })),
     direction: INITIAL_DIRECTION,     // direction actuelle du serpent
     nextDirection: INITIAL_DIRECTION, // direction demandée au clavier, appliquée au prochain pas
-    food: { x: 15, y: 10 },          // position de la pomme normale
+    food: null,                      // position {x, y} de la pomme, tirée au hasard par placeFood()
     obstacles: [],                   // obstacles {x, y, sprite}, tirés au hasard par createObstacles()
     specialFood: null,               // pomme spéciale {x, y, expiresAt} ou null s'il n'y en a pas
     score: 0,                        // points de la partie en cours

@@ -1,17 +1,17 @@
 /*
     main.js — Le point d'entrée du jeu.
     C'est le premier fichier chargé par index.html : il attend les ressources,
-    prépare l'affichage, place les obstacles, branche le clavier,
+    prépare l'affichage, place les obstacles et la pomme, branche le clavier,
     puis affiche l'écran de menu. La suite se passe dans controller.js.
 */
 
 import { state } from "./config.js";
 import { loadAssets } from "./assets.js";
-import { createObstacles } from "./model.js";
+import { resetGame } from "./model.js";
 import { initController } from "./controller.js";
 import { initView, render, updateHud, drawLoadingError } from "./view.js";
 
-// On démarre l'application : chargement de la spritesheet, placement des obstacles,
+// On démarre l'application : chargement des ressources, placement des obstacles et de la pomme,
 // écoute du clavier, puis premier affichage (l'écran de menu).
 // Si le chargement échoue, on affiche l'erreur dans le canvas au lieu d'un écran vide.
 async function startApp() {
@@ -20,8 +20,8 @@ async function startApp() {
     try {
         const assets = await loadAssets();
         initView(canvas, assets.spritesheet);
-        createObstacles(state);
-        initController();
+        resetGame(state);
+        initController(assets.eatSound);
         updateHud(state);
         render(state);
     } catch (error) {

@@ -6,10 +6,13 @@
 
 import { state, KEYS, DIRECTIONS, GAME_STATUS } from "./config.js";
 import { changeDirection, updateGame, resetGame } from "./model.js";
-import { render } from "./view.js";
+import { render, updateHud } from "./view.js";
 
 // Identifiant du prochain tour de boucle programmé, pour pouvoir l'annuler
 let loopTimer = null;
+
+// Le son "crunch" joué quand le serpent mange, reçu dans initController()
+let eatSound = null;
 
 // On traduit la touche appuyée en action du jeu ("up", "pause", "start"...).
 // On parcourt KEYS et on renvoie le nom de l'action qui contient cette touche, ou null.
@@ -24,6 +27,7 @@ function getActionFromKey(key) {
 function startGame() {
     if (state.status === GAME_STATUS.GAME_OVER) {
         resetGame(state);
+        updateHud(state);
     }
     state.status = GAME_STATUS.PLAYING;
     scheduleNextTick();
@@ -61,6 +65,14 @@ function handleKeyDown(event) {
     }
 }
 
+// On joue le "crunch". On le rembobine d'abord pour qu'il reparte du début
+// même si le son précédent n'était pas fini (pommes mangées coup sur coup).
+function playEatSound() {
+    eatSound.currentTime = 0;
+    // play() peut être refusé par le navigateur : ce n'est pas grave, on ignore l'erreur
+    eatSound.play().catch(() => {});
+}
+
 // On programme le prochain pas du jeu dans state.speedMs millisecondes.
 // On utilise setTimeout (et pas setInterval) pour que la vitesse puisse changer
 // d'un pas à l'autre quand on passera au niveau supérieur.
@@ -72,14 +84,19 @@ function scheduleNextTick() {
 // Un tour de boucle : le Model fait avancer le serpent, la View redessine,
 // puis on programme le tour suivant tant que la partie continue.
 function gameTick() {
-    updateGame(state);
+    const hasEaten = updateGame(state);
+    if (hasEaten) {
+        playEatSound();
+        updateHud(state);
+    }
     render(state);
     if (state.status === GAME_STATUS.PLAYING) {
         scheduleNextTick();
     }
 }
 
-// On branche l'écoute du clavier sur toute la page.
-export function initController() {
+// On branche l'écoute du clavier sur toute la page et on garde le son pour plus tard.
+export function initController(sound) {
+    eatSound = sound;
     document.addEventListener("keydown", handleKeyDown);
 }
