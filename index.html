@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<!--
+    index.html — La page du jeu.
+    Elle contient seulement le squelette : le titre, la barre de score et le canvas.
+    Tout le dessin et la logique sont faits en JavaScript (dossier js/).
+-->
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake With AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Snake</h1>
+
+    <!-- Barre d'infos : mise à jour par le JavaScript à chaque point marqué -->
+    <div class="hud">
+        <p>Score : <span id="score">0</span></p>
+        <p>Niveau : <span id="level">1</span></p>
+        <p>Record : <span id="best-score">0</span></p>
+    </div>
+
+    <!-- La "fenêtre" du jeu. Sa taille est fixée dans js/config.js, pas ici -->
+    <canvas id="game-canvas"></canvas>
+
+    <p class="help">Flèches / ZQSD / WASD pour bouger — Espace pour la pause — Entrée pour jouer</p>
+
+    <!-- type="module" permet d'utiliser import/export entre nos fichiers JS -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
