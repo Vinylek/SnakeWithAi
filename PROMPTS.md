@@ -79,7 +79,7 @@ Entre les étapes, le code a été commité.
 
 
 
-## Bonnes pratiques de prompting apprises
+## Bonnes pratiques de prompting apprises et appliquées
 
 1. **Donner le cadre une fois pour toutes.** Un cahier des charges détaillé (`PROMPT.md`) évite de répéter les règles à chaque demande (noms en anglais, commentaires en français, `config.js`, MVC). Les petits prompts suivants en ont profité.
 2. **Avancer par petites étapes.** Une fonctionnalité par prompt. Chaque résultat est assez court pour être relu, testé et compris avant de passer au suivant.

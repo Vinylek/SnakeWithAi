@@ -42,6 +42,7 @@ SnakeWithAi/
 ├── README.md             Ce document
 ├── PROMPT.md             Le cahier des charges donné à l'IA
 ├── PROMPTS.md            Les prompts utilisé
+├── FONCTIONS_NATIVES.md  Les fonctions natives JavaScript utilisées, avec liens MDN
 ├── assets/
 │   ├── snake_spritesheet.png   Tous les dessins du jeu (tuiles de 16×16 px)
 │   └── crunch.wav              Le son joué quand le serpent mange
