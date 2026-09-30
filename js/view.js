@@ -7,7 +7,8 @@
 
 import {
     CELL_SIZE, CANVAS_WIDTH, CANVAS_HEIGHT, COLUMNS, ROWS,
-    SPRITE_SIZE, SPRITES, COLORS, GAME_STATUS, MENU_OPTIONS, PLAYER_NAME_MAX_LENGTH
+    SPRITE_SIZE, SPRITES, COLORS, GAME_STATUS, MENU_OPTIONS, PLAYER_NAME_MAX_LENGTH,
+    SPECIAL_FOOD_BLINK_MS
 } from "./config.js";
 import { getBestScore } from "./leaderboard.js";
 
@@ -60,12 +61,20 @@ function drawObstacles(state) {
     sortedObstacles.forEach(obstacle => drawSprite(obstacle.sprite, obstacle.x, obstacle.y));
 }
 
+// On décide si la pomme dorée doit être visible sur cette image.
+// Pendant ses dernières SPECIAL_FOOD_BLINK_MS millisecondes, on la cache une fois sur deux
+// (toutes les 300 ms) : elle clignote pour prévenir le joueur qu'elle va disparaître.
+function isSpecialFoodVisible(specialFood) {
+    if (specialFood.remainingMs > SPECIAL_FOOD_BLINK_MS) return true;
+    return Math.floor(specialFood.remainingMs / 300) % 2 === 0;
+}
+
 // On dessine la pomme normale, et la pomme dorée si elle est présente.
 function drawFood(state) {
     if (state.food) {
         drawSprite(SPRITES.food, state.food.x, state.food.y);
     }
-    if (state.specialFood) {
+    if (state.specialFood && isSpecialFoodVisible(state.specialFood)) {
         drawSprite(SPRITES.specialFood, state.specialFood.x, state.specialFood.y);
     }
 }

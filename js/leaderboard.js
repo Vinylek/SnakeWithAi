@@ -4,7 +4,7 @@
     enregistrés même quand on ferme la page. Aucun dessin ici, que des données.
 */
 
-import { LEADERBOARD_SIZE, LEADERBOARD_STORAGE_KEY } from "./config.js";
+import { LEADERBOARD_SIZE, LEADERBOARD_STORAGE_KEY, LAST_PLAYER_NAME_STORAGE_KEY } from "./config.js";
 
 // On vérifie qu'une ligne lue dans le localStorage ressemble bien à {name, score}.
 // Quelqu'un a pu modifier le localStorage à la main, donc on ne lui fait pas confiance.
@@ -48,21 +48,49 @@ export function isHighScore(leaderboard, score) {
 }
 
 // On ajoute un score à sa place dans le classement, puis on enregistre.
-// Renvoie le nouveau classement et la place obtenue (0 = premier), pour la surligner.
+// Chaque joueur n'a qu'une seule ligne : si son pseudo est déjà dans le classement,
+// on garde seulement son meilleur score (l'ancien s'il était plus haut ou égal).
+// Renvoie le nouveau classement et la place du joueur (0 = premier), pour la surligner.
 export function addScore(leaderboard, name, score) {
-    // On se place juste avant le premier score strictement plus petit :
-    // à égalité, l'ancien score reste devant (premier arrivé, premier servi)
-    let rank = leaderboard.findIndex(entry => score > entry.score);
-    if (rank === -1) {
-        rank = leaderboard.length;
+    const previousRank = leaderboard.findIndex(entry => entry.name === name);
+    if (previousRank !== -1 && leaderboard[previousRank].score >= score) {
+        // Il avait déjà fait mieux : rien ne change, on surligne juste son ancienne ligne
+        return { leaderboard, rank: previousRank };
     }
 
-    const newLeaderboard = [...leaderboard];
+    const otherPlayers = leaderboard.filter(entry => entry.name !== name);
+
+    // On se place juste avant le premier score strictement plus petit :
+    // à égalité, l'ancien score reste devant (premier arrivé, premier servi)
+    let rank = otherPlayers.findIndex(entry => score > entry.score);
+    if (rank === -1) {
+        rank = otherPlayers.length;
+    }
+
+    const newLeaderboard = [...otherPlayers];
     newLeaderboard.splice(rank, 0, { name, score });
     const topScores = newLeaderboard.slice(0, LEADERBOARD_SIZE);
 
     saveLeaderboard(topScores);
     return { leaderboard: topScores, rank };
+}
+
+// On relit le dernier pseudo utilisé, pour pré-remplir la saisie. Chaîne vide s'il n'y en a pas.
+export function loadLastPlayerName() {
+    try {
+        return localStorage.getItem(LAST_PLAYER_NAME_STORAGE_KEY) || "";
+    } catch {
+        return "";
+    }
+}
+
+// On retient le pseudo qu'on vient d'utiliser pour le proposer à la prochaine partie.
+export function saveLastPlayerName(name) {
+    try {
+        localStorage.setItem(LAST_PLAYER_NAME_STORAGE_KEY, name);
+    } catch {
+        // Tant pis : il faudra juste retaper son pseudo la prochaine fois
+    }
 }
 
 // Le meilleur score de tous les temps : le premier du classement, ou 0 s'il est vide.

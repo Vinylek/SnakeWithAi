@@ -12,7 +12,7 @@ import {
     PLAYER_NAME_MAX_LENGTH, DEFAULT_PLAYER_NAME
 } from "./config.js";
 import { changeDirection, updateGame, resetGame } from "./model.js";
-import { isHighScore, addScore } from "./leaderboard.js";
+import { isHighScore, addScore, saveLastPlayerName } from "./leaderboard.js";
 import { render, updateHud } from "./view.js";
 
 // Identifiant du prochain tour de boucle programmé, pour pouvoir l'annuler
@@ -73,17 +73,18 @@ function showLeaderboard() {
 
 // La partie vient de se terminer : si le score entre dans le top 10,
 // on demande un pseudo, sinon on reste sur l'écran de game over.
+// state.playerName n'est pas vidé : la saisie est pré-remplie avec le dernier pseudo.
 function endGame() {
     if (isHighScore(state.leaderboard, state.score)) {
-        state.playerName = "";
         state.status = GAME_STATUS.NAME_ENTRY;
     }
 }
 
-// Le joueur a validé son pseudo : on range son score dans le classement,
-// puis on affiche le classement avec sa ligne surlignée.
+// Le joueur a validé son pseudo : on range son score dans le classement, on retient
+// le pseudo pour la prochaine fois, puis on affiche le classement avec sa ligne surlignée.
 function submitScore() {
     const name = state.playerName || DEFAULT_PLAYER_NAME;
+    saveLastPlayerName(state.playerName);
     const result = addScore(state.leaderboard, name, state.score);
     state.leaderboard = result.leaderboard;
     state.lastRank = result.rank;

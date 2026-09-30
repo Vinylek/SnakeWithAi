@@ -8,7 +8,7 @@
 import { state } from "./config.js";
 import { loadAssets } from "./assets.js";
 import { resetGame } from "./model.js";
-import { loadLeaderboard } from "./leaderboard.js";
+import { loadLeaderboard, loadLastPlayerName } from "./leaderboard.js";
 import { initController } from "./controller.js";
 import { initView, render, updateHud, drawLoadingError } from "./view.js";
 
@@ -23,6 +23,7 @@ async function startApp() {
         initView(canvas, assets.spritesheet);
         resetGame(state);
         state.leaderboard = loadLeaderboard();
+        state.playerName = loadLastPlayerName();
         initController(assets.eatSound);
         updateHud(state);
         render(state);

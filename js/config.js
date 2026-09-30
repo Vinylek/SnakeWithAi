@@ -52,6 +52,9 @@ export const SPECIAL_FOOD_CHANCE = 0.25;
 // Durée de vie de la pomme spéciale avant qu'elle disparaisse, en millisecondes
 export const SPECIAL_FOOD_DURATION_MS = 5000;
 
+// Pendant ses dernières millisecondes, la pomme spéciale clignote pour prévenir qu'elle va partir
+export const SPECIAL_FOOD_BLINK_MS = 1500;
+
 
 // ----- 4. Les obstacles -----
 
@@ -157,19 +160,20 @@ export const SPRITES = {
     },
     // Obstacles : 1 tuile de large mais 2 de haut (le haut des arbres dépasse de la case).
     // Seule la case du bas compte pour les collisions, le haut est juste décoratif.
+    // "deadly" : true si le serpent meurt en le touchant, false s'il peut passer par-dessus.
     obstacles: [
-        { col: 4, row: 0, height: 2 },  // gros rochers
-        { col: 5, row: 0, height: 2 },
-        { col: 6, row: 0, height: 2 },
-        { col: 7, row: 0, height: 2 },  // petits rochers
-        { col: 8, row: 0, height: 2 },
-        { col: 9, row: 0, height: 2 },
-        { col: 10, row: 0, height: 2 }, // arbres et arbustes
-        { col: 11, row: 0, height: 2 },
-        { col: 12, row: 0, height: 2 },
-        { col: 13, row: 0, height: 2 },
-        { col: 14, row: 0, height: 2 },
-        { col: 15, row: 0, height: 2 }
+        { col: 4, row: 0, height: 2, deadly: true },   // gros rochers
+        { col: 5, row: 0, height: 2, deadly: true },
+        { col: 6, row: 0, height: 2, deadly: true },
+        { col: 7, row: 0, height: 2, deadly: false },  // petits rochers
+        { col: 8, row: 0, height: 2, deadly: false },
+        { col: 9, row: 0, height: 2, deadly: false },
+        { col: 10, row: 0, height: 2, deadly: true },  // gros arbres
+        { col: 11, row: 0, height: 2, deadly: true },
+        { col: 12, row: 0, height: 2, deadly: true },
+        { col: 13, row: 0, height: 2, deadly: false }, // petits arbustes
+        { col: 14, row: 0, height: 2, deadly: false },
+        { col: 15, row: 0, height: 2, deadly: false }
     ],
     food: { col: 0, row: 21 },        // pomme rouge
     specialFood: { col: 2, row: 21 }  // pomme dorée (points doubles)
@@ -189,6 +193,9 @@ export const LEADERBOARD_SIZE = 10;
 
 // Nom de la clé sous laquelle le classement est rangé dans le localStorage du navigateur
 export const LEADERBOARD_STORAGE_KEY = "snake-leaderboard";
+
+// Nom de la clé sous laquelle le dernier pseudo utilisé est rangé, pour le proposer la fois suivante
+export const LAST_PLAYER_NAME_STORAGE_KEY = "snake-last-player-name";
 
 // Nombre maximum de caractères du pseudo tapé pour le classement
 export const PLAYER_NAME_MAX_LENGTH = 10;
@@ -219,12 +226,13 @@ export const state = {
     nextDirection: INITIAL_DIRECTION, // direction demandée au clavier, appliquée au prochain pas
     food: null,                      // position {x, y} de la pomme, tirée au hasard par placeFood()
     obstacles: [],                   // obstacles {x, y, sprite}, tirés au hasard par createObstacles()
-    specialFood: null,               // pomme spéciale {x, y, expiresAt} ou null s'il n'y en a pas
+    specialFood: null,               // pomme dorée {x, y, remainingMs} ou null s'il n'y en a pas
     score: 0,                        // points de la partie en cours
     leaderboard: [],                 // top 10 {name, score}, du meilleur au moins bon (localStorage)
     lastRank: -1,                    // place du dernier score enregistré (surlignée), -1 si aucune
-    playerName: "",                  // pseudo en cours de saisie sur l'écran NAME_ENTRY
+    playerName: "",                  // pseudo saisi sur l'écran NAME_ENTRY (pré-rempli avec le dernier utilisé)
     menuIndex: 0,                    // option du menu actuellement sélectionnée
+    foodEaten: 0,                    // nombre de pommes mangées (normales + dorées), sert au calcul du niveau
     level: 1,                        // niveau actuel, augmente toutes les FOOD_PER_LEVEL pommes
     speedMs: INITIAL_SPEED_MS,       // intervalle actuel entre deux déplacements
     status: GAME_STATUS.MENU         // écran affiché : menu / en cours / pause / game over
