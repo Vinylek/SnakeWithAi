@@ -1,19 +1,10 @@
 # SnakeWithAi
 
-Un jeu Snake en JavaScript « vanilla » (HTML + CSS + JS, sans framework ni bibliothèque), dessiné dans un `<canvas>` avec des sprites en pixel art.
+Un jeu Snake en JavaScript vanilla (HTML + CSS + JS), dessiné dans un `<canvas>` avec des sprites en pixel art.
 
 ---
 
-## 1. Présentation et objectif pédagogique
-
-Ce projet est un exercice : construire un Snake complet **avec l'aide d'une IA**, mais en restant capable d'**expliquer chaque fonction à l'oral**.
-
-Le code suit donc quelques règles strictes :
-
-- des **fonctions courtes**, qui font une seule chose, avec des noms explicites en anglais ;
-- **aucun nombre magique** : tous les réglages sont regroupés dans `js/config.js` ;
-- des **commentaires en français**, écrits comme si on expliquait le code à un camarade ;
-- une architecture claire (**MVC**, voir la partie 6), pour savoir immédiatement où chercher quoi.
+## 1. Présentation
 
 Le serpent se déplace sur une carte de sable parsemée de rochers et d'arbres. Il mange des pommes pour grandir, accélère de niveau en niveau, et les meilleurs scores sont gardés dans un classement.
 
@@ -36,10 +27,9 @@ Puis ouvrir **http://localhost:8000** dans le navigateur.
 | Touche | Action |
 |---|---|
 | Flèches, **ZQSD** (AZERTY) ou **WASD** (QWERTY) | Diriger le serpent / choisir dans le menu |
-| **Espace** | Pause / reprise |
+| **Espace** | Pause |
 | **Entrée** | Valider (menu, pseudo, rejouer) |
-| **Échap** | Revenir au menu / ne pas enregistrer son score |
-| **Retour arrière** | Effacer une lettre du pseudo |
+| **Échap** | Revenir au menu |
 
 ---
 
@@ -48,22 +38,22 @@ Puis ouvrir **http://localhost:8000** dans le navigateur.
 ```
 SnakeWithAi/
 ├── index.html            La page : titre, barre de score (HUD), <canvas>, charge js/main.js
-├── style.css             Mise en page : centrage, fond sombre, sprites nets (pixelated)
+├── style.css             Mise en page : centrage, fond, sprites 
 ├── README.md             Ce document
 ├── PROMPT.md             Le cahier des charges donné à l'IA
+├── PROMPTS.md            Les prompts utilisé
 ├── assets/
 │   ├── snake_spritesheet.png   Tous les dessins du jeu (tuiles de 16×16 px)
 │   └── crunch.wav              Le son joué quand le serpent mange
-├── js/
-│   ├── config.js         Les bases : constantes réglables + l'objet `state` (état du jeu)
-│   ├── main.js           Point d'entrée : charge tout et affiche le menu
-│   ├── assets.js         Chargement de la spritesheet et du son
-│   ├── model.js          MODEL : règles du jeu (déplacement, collisions, pommes, niveaux)
-│   ├── leaderboard.js    MODEL : classement top 10 et dernier pseudo (localStorage)
-│   ├── view.js           VIEW : tout le dessin dans le canvas + mise à jour du HUD
-│   ├── controller.js     CONTROLLER : clavier, changements d'écran, boucle de jeu
-│   └── ressources.zip    Archive d'une ancienne version (non utilisée par le jeu)
-└── snake.zip             Archive d'une ancienne version (non utilisée par le jeu)
+└── js/
+    ├── config.js         Les bases : constantes réglables + l'objet `state`
+    ├── main.js           Point d'entrée : charge tout et affiche le menu
+    ├── assets.js         Chargement de la spritesheet et du son
+    ├── model.js          MODEL : règles du jeu (déplacement, collisions, pommes, niveaux)
+    ├── leaderboard.js    MODEL : classement top 10 et dernier pseudo (localStorage)
+    ├── view.js           VIEW : tout le dessin dans le canvas + mise à jour du HUD
+    └── controller.js     CONTROLLER : clavier, changements d'écran, boucle de jeu
+  
 ```
 
 ---
@@ -118,7 +108,7 @@ Chaque dessin d'obstacle (`SPRITES.obstacles`) a un réglage `deadly` : les **gr
 
 ### 4.5 Les couleurs
 
-`COLORS` regroupe les couleurs du texte (`text`), de la sélection (`highlight`, jaune) et du voile sombre posé derrière les écrans (`overlay`). Il déclare aussi `background`, `snake`, `food` et `specialFood`, prévues comme couleurs de secours, mais aucun code ne les utilise pour l'instant (voir la partie 9).
+`COLORS` regroupe les couleurs du texte (`text`), de la sélection (`highlight`, jaune) et du voile sombre posé derrière les écrans (`overlay`).
 
 ### 4.6 Les touches de contrôle
 
@@ -181,7 +171,7 @@ Tout ce qui **change pendant la partie** est rangé dans un seul objet, `state`.
 
 ---
 
-## 5. Fonctionnalités (24)
+## 5. Fonctionnalités
 
 **Déplacements et contrôles**
 
@@ -196,7 +186,7 @@ Tout ce qui **change pendant la partie** est rangé dans un seul objet, `state`.
 6. **Score** affiché en direct.
 7. **Pomme dorée temporaire** : 1 chance sur 4 d'apparaître, **points doubles**, disparaît après 5 s.
 8. La pomme dorée **clignote** avant de disparaître.
-9. **Son** « crunch » quand le serpent mange.
+9. **Son** "crunch" quand le serpent mange.
 
 **Difficulté**
 
@@ -224,7 +214,7 @@ Tout ce qui **change pendant la partie** est rangé dans un seul objet, `state`.
 
 ---
 
-## 6. Design pattern : MVC (+ un peu de State)
+## 6. Design pattern : MVC 
 
 ### 6.1 Le pattern choisi
 
@@ -282,24 +272,6 @@ stateDiagram-v2
     GAME_OVER --> MENU : Échap
     LEADERBOARD --> MENU : Entrée / Échap
 ```
-
-### 6.3 Pourquoi ce choix
-
-- Un jeu se découpe naturellement en **données** (le serpent, les pommes, le score), **affichage** (le canvas) et **entrées** (le clavier + la boucle). MVC correspond exactement à ce découpage.
-- Pour l'oral, on sait immédiatement **où se trouve chaque chose** : une règle du jeu est dans `model.js`, un dessin dans `view.js`, une touche dans `controller.js`.
-- Le pattern State règle proprement le problème des 6 écrans, qui aurait sinon rempli le contrôleur de conditions.
-
-### 6.4 Avantages et limites
-
-**Avantages**
-- **Model testable sans navigateur** : `model.js` et `leaderboard.js` ne touchent ni au canvas ni au clavier. On peut appeler `updateGame(state)` dans Node.js et vérifier le résultat (c'est ce qui a été fait pendant le développement).
-- **Affichage remplaçable** : on pourrait refaire `view.js` en HTML ou en ASCII sans toucher aux règles.
-- **Modifications localisées** : changer la vitesse ou les touches = changer `config.js`, rien d'autre.
-
-**Limites**
-- **Plus de fichiers** qu'un script unique : pour un petit jeu, il faut naviguer entre 7 fichiers.
-- **`state` est un objet global partagé** : n'importe quel module qui l'importe pourrait le modifier. La règle « la View ne modifie jamais `state` » est une convention, rien ne l'impose techniquement.
-- **Frontière pas parfaite** : `view.js` appelle `getBestScore()` du Model pour afficher le record. C'est une lecture, donc acceptable en MVC, mais cela crée une dépendance View → Model.
 
 ---
 
@@ -978,33 +950,17 @@ GAME_OVER  : Entrée → startGame()  |  Échap → goToMenu()
 
 ---
 
-## 9. Difficultés rencontrées et choix effectués
+## 9. Difficultés rencontrées par l'ia et choix effectués
 
 ### Difficultés
 
-- **Découper la spritesheet.** L'image ne dit pas quel carré est quel virage. Il a fallu repérer que les tuiles font 16 × 16 px, puis identifier chaque morceau de corps en regardant de quels côtés il est ouvert (d'où les clés `"up-left"`, `"down-right"`…). Le rendu des virages a été vérifié en recomposant un serpent en zigzag.
-- **Les obstacles font 2 cases de haut.** Les arbres dépassent d'une tuile de 16 px : découpés sur une seule case, leur feuillage était coupé. Solution : un sprite peut avoir `height: 2`. `drawSprite` aligne alors le bas du dessin sur la case et laisse le haut dépasser. Seule la case du bas compte pour les collisions, et aucun obstacle n'est placé sur la première ligne (son haut sortirait du canvas).
-- **Ordre de dessin.** Un arbre peut recouvrir la case au-dessus de lui. On dessine donc les obstacles du haut vers le bas, et **avant** les pommes et le serpent, pour qu'un feuillage ne cache jamais une pomme.
-- **Les modules ES ne marchent pas en double-cliquant sur `index.html`.** C'est une sécurité des navigateurs, en contradiction avec la consigne « ouvrir en double-cliquant ». On a gardé les modules (demandés aussi par la consigne) et documenté la commande du serveur local.
-- **Demi-tour avec deux touches rapides.** En allant à droite, appuyer très vite sur haut puis gauche aurait pu faire faire demi-tour au serpent dans le même pas. Solution : `changeDirection` compare avec la direction **réellement suivie**, pas avec la dernière demandée.
+- **Découper la spritesheet.** L'image ne dit pas quel carré est quel virage. Il a fallu repérer les tuiles, puis identifier chaque morceau de corps en regardant de quels côtés il est ouvert pour le donner à l'ia. On a réaliser un fichier json temporaire pour nourir l'ia.
+- **Les obstacles font 2 cases de haut.** Les arbres dépassent d'une tuile de 16 px : découpés sur une seule case, leur feuillage était coupé. Solution donnée à l'ia: un sprite peut avoir `height: 2`. `drawSprite` aligne alors le bas du dessin sur la case et laisse le haut dépasser. Seule la case du bas compte pour les collisions, et aucun obstacle n'est placé sur la première ligne (son haut sortirait du canvas).
+- **Ordre de dessin.** Un arbre peut recouvrir la case au-dessus de lui. On dessine donc les obstacles du haut vers le bas, et avant les pommes et le serpent, pour qu'un feuillage ne cache jamais une pomme.
+- **Les modules ES ne marchent pas en double-cliquant sur `index.html`.** C'est une sécurité des navigateurs. L'ia a compris d'elle-même et trouvée une solution (serveur http en localhost port 8000)
+- **Demi-tour avec deux touches rapides.** En allant à droite, appuyer très vite sur haut puis gauche aurait pu faire faire demi-tour au serpent dans le même pas. Solution : `changeDirection` compare avec la direction réellement suivie, pas avec la dernière demandée.
 - **Collision avec la queue.** La tête peut entrer dans la case que la queue est en train de quitter. `hitsOwnBody` ignore donc le dernier morceau.
 - **Accélérer une boucle.** `setInterval` garde le même intervalle pour toujours. On utilise `setTimeout`, reprogrammé à chaque pas avec la vitesse du moment.
 - **Minuterie de la pomme dorée et pause.** Avec l'horloge de l'ordinateur (`Date.now()`), la pomme aurait continué de vieillir pendant la pause. On retire la durée d'un pas à chaque pas : le temps s'arrête avec le jeu, et la pomme dure bien 5 s à toutes les vitesses.
 - **Saisie du pseudo vs touches du jeu.** `z`, `q`, `s`, `d` sont aussi des directions. Sur l'écran de saisie, on teste d'abord Entrée / Retour arrière / Échap, puis on accepte la lettre telle quelle.
 - **`localStorage` peu fiable.** Il peut être bloqué (navigation privée, certains réglages) ou modifié à la main. Toutes les lectures et écritures sont protégées par `try/catch`, et le classement relu est vérifié ligne par ligne (`isValidEntry`), retrié et coupé à 10.
-
-### Choix
-
-- **Placer la pomme en piochant dans la liste des cases libres** plutôt qu'en tirant des cases au hasard jusqu'à en trouver une bonne : on trouve du premier coup, et il n'y a pas de boucle infinie si le plateau est presque plein.
-- **Zone protégée** de 4 cases autour du serpent de départ (distance à vol d'oiseau), pour ne pas démarrer une partie face à un rocher.
-- **Petits obstacles franchissables** (réglage `deadly` par dessin), pour varier la carte sans la rendre injouable. La pomme ne tombe jamais dessus, pour ne jamais être cachée.
-- **Une nouvelle carte à chaque partie.**
-- **Classement** : top 10, un pseudo = une seule ligne avec **son meilleur score**, dernier pseudo pré-rempli. Le pseudo est demandé seulement si le score entre dans le top 10 (sinon, écran de game over direct).
-- **Le record du HUD** est le 1er du classement, et suit le score en direct dès qu'on le dépasse.
-- **Un seul objet `state`** pour tout l'état du jeu : facile à passer aux fonctions, facile à tester.
-
-### Limites connues
-
-- Les couleurs `COLORS.background`, `snake`, `food` et `specialFood` sont déclarées comme « couleurs de secours », mais aucun affichage de secours n'est codé : si la spritesheet ne charge pas, le jeu affiche seulement un message d'erreur.
-- Les joueurs qui valident sans pseudo partagent tous la même ligne `ANONYME`.
-- Le jeu se joue uniquement au clavier (pas de contrôles tactiles).

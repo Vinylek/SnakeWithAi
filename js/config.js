@@ -70,10 +70,6 @@ export const OBSTACLE_SAFE_RADIUS = 4;
 
 // Couleurs utilisées pour le texte, les écrans et en secours si la spritesheet ne charge pas
 export const COLORS = {
-    background: "#2b2b2b",   // fond du plateau (secours)
-    snake: "#4caf50",        // serpent (secours)
-    food: "#e53935",         // pomme normale (secours)
-    specialFood: "#fdd835",  // pomme spéciale (secours)
     text: "#ffffff",         // texte des écrans menu / pause / game over
     highlight: "#fdd835",    // option choisie dans le menu, nouvelle ligne du classement
     overlay: "rgba(0, 0, 0, 0.6)" // voile sombre posé sur le jeu derrière les textes
