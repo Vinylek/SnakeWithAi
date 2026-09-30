@@ -23,15 +23,17 @@ export function initView(canvas, spritesheetImage) {
     spritesheet = spritesheetImage;
 }
 
-// On découpe une tuile de 16x16 dans la spritesheet et on la colle, agrandie,
-// sur la case (x, y) de la grille.
+// On découpe un dessin dans la spritesheet et on le colle, agrandi, sur la case (x, y).
+// La plupart des dessins font 1 tuile, mais un obstacle en fait 2 de haut : dans ce cas
+// on aligne le bas du dessin sur la case, et le haut dépasse sur la case du dessus.
 function drawSprite(sprite, x, y) {
+    const height = sprite.height || 1;
     context.drawImage(
         spritesheet,
         // Zone à découper dans la spritesheet (source)
-        sprite.col * SPRITE_SIZE, sprite.row * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE,
-        // Endroit où la coller dans le canvas (destination)
-        x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE
+        sprite.col * SPRITE_SIZE, sprite.row * SPRITE_SIZE, SPRITE_SIZE, height * SPRITE_SIZE,
+        // Endroit où la coller dans le canvas (destination), remonté si le dessin est haut
+        x * CELL_SIZE, (y - (height - 1)) * CELL_SIZE, CELL_SIZE, height * CELL_SIZE
     );
 }
 
@@ -43,6 +45,13 @@ function drawBackground() {
             drawSprite(tile, x, y);
         }
     }
+}
+
+// On dessine les obstacles de haut en bas de l'écran : ainsi un arbre plus bas
+// passe devant le haut d'un arbre situé juste au-dessus, comme dans la réalité.
+function drawObstacles(state) {
+    const sortedObstacles = [...state.obstacles].sort((a, b) => a.y - b.y);
+    sortedObstacles.forEach(obstacle => drawSprite(obstacle.sprite, obstacle.x, obstacle.y));
 }
 
 // On dessine la pomme normale, et la pomme dorée si elle est présente.
@@ -97,10 +106,12 @@ function drawSnake(state) {
     }
 }
 
-// On redessine toute la scène : d'abord le sol, puis les pommes, puis le serpent.
-// L'ordre compte : ce qui est dessiné en dernier apparaît au-dessus.
+// On redessine toute la scène : le sol, les obstacles, les pommes, puis le serpent.
+// L'ordre compte : ce qui est dessiné en dernier apparaît au-dessus. Les obstacles
+// passent avant pour que le haut d'un arbre ne cache jamais une pomme ou le serpent.
 export function render(state) {
     drawBackground();
+    drawObstacles(state);
     drawFood(state);
     drawSnake(state);
 }

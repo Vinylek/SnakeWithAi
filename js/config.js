@@ -11,15 +11,15 @@
 export const CELL_SIZE = 32;
 
 // Nombre de cases sur la largeur du plateau
-export const COLUMNS = 20;
+export const COLUMNS = 30;
 
 // Nombre de cases sur la hauteur du plateau
-export const ROWS = 20;
+export const ROWS = 25;
 
-// Largeur du canvas en pixels, calculée à partir de la grille (20 x 32 = 640)
+// Largeur du canvas en pixels, calculée à partir de la grille (COLUMNS x CELL_SIZE)
 export const CANVAS_WIDTH = COLUMNS * CELL_SIZE;
 
-// Hauteur du canvas en pixels (20 x 32 = 640)
+// Hauteur du canvas en pixels (ROWS x CELL_SIZE)
 export const CANVAS_HEIGHT = ROWS * CELL_SIZE;
 
 
@@ -53,7 +53,17 @@ export const SPECIAL_FOOD_CHANCE = 0.25;
 export const SPECIAL_FOOD_DURATION_MS = 5000;
 
 
-// ----- 4. Les couleurs -----
+// ----- 4. Les obstacles -----
+
+// Nombre d'obstacles (rochers, arbres) posés au hasard sur la carte en début de partie
+export const OBSTACLE_COUNT = 25;
+
+// Rayon (en cases) autour du serpent de départ où aucun obstacle ne peut apparaître,
+// pour que le joueur ait le temps de réagir au lancement de la partie
+export const OBSTACLE_SAFE_RADIUS = 4;
+
+
+// ----- 5. Les couleurs -----
 
 // Couleurs utilisées pour le texte, les écrans et en secours si la spritesheet ne charge pas
 export const COLORS = {
@@ -66,7 +76,7 @@ export const COLORS = {
 };
 
 
-// ----- 5. Les touches de contrôle -----
+// ----- 6. Les touches de contrôle -----
 
 // On compare avec event.key : plusieurs touches peuvent déclencher la même action
 // (flèches pour tout le monde, ZQSD pour les claviers AZERTY, WASD pour les QWERTY)
@@ -88,7 +98,7 @@ export const DIRECTIONS = {
 };
 
 
-// ----- 6. La spritesheet -----
+// ----- 7. La spritesheet -----
 
 // Chemin de l'image qui contient tous les dessins du jeu
 export const SPRITESHEET_PATH = "assets/snake_spritesheet.png";
@@ -100,6 +110,7 @@ export const EAT_SOUND_PATH = "assets/crunch.wav";
 export const SPRITE_SIZE = 16;
 
 // Position (colonne, ligne) de chaque dessin dans la spritesheet, en tuiles de 16 px.
+// "height" (optionnel) = nombre de tuiles en hauteur, pour les dessins plus grands qu'une case.
 // On utilise le serpent vert (lignes 9 à 13) sur un sol de sable (lignes 0 et 1).
 export const SPRITES = {
     // Deux tuiles de sable qu'on alterne en damier pour que le sol ne soit pas monotone
@@ -130,18 +141,34 @@ export const SPRITES = {
         down: { col: 8, row: 12 },
         right: { col: 8, row: 13 }
     },
+    // Obstacles : 1 tuile de large mais 2 de haut (le haut des arbres dépasse de la case).
+    // Seule la case du bas compte pour les collisions, le haut est juste décoratif.
+    obstacles: [
+        { col: 4, row: 0, height: 2 },  // gros rochers
+        { col: 5, row: 0, height: 2 },
+        { col: 6, row: 0, height: 2 },
+        { col: 7, row: 0, height: 2 },  // petits rochers
+        { col: 8, row: 0, height: 2 },
+        { col: 9, row: 0, height: 2 },
+        { col: 10, row: 0, height: 2 }, // arbres et arbustes
+        { col: 11, row: 0, height: 2 },
+        { col: 12, row: 0, height: 2 },
+        { col: 13, row: 0, height: 2 },
+        { col: 14, row: 0, height: 2 },
+        { col: 15, row: 0, height: 2 }
+    ],
     food: { col: 0, row: 21 },        // pomme rouge
     specialFood: { col: 2, row: 21 }  // pomme dorée (points doubles)
 };
 
 
-// ----- 7. Le meilleur score -----
+// ----- 8. Le meilleur score -----
 
 // Nom de la clé sous laquelle le record est rangé dans le localStorage du navigateur
 export const BEST_SCORE_STORAGE_KEY = "snake-best-score";
 
 
-// ----- 8. L'état du jeu -----
+// ----- 9. L'état du jeu -----
 
 // Les différents écrans / moments possibles de la partie
 export const GAME_STATUS = {
@@ -163,6 +190,7 @@ export const state = {
     direction: DIRECTIONS.right,     // direction actuelle du serpent
     nextDirection: DIRECTIONS.right, // direction demandée au clavier, appliquée au prochain pas
     food: { x: 15, y: 10 },          // position de la pomme normale
+    obstacles: [],                   // obstacles {x, y, sprite}, tirés au hasard par createObstacles()
     specialFood: null,               // pomme spéciale {x, y, expiresAt} ou null s'il n'y en a pas
     score: 0,                        // points de la partie en cours
     bestScore: 0,                    // meilleur score (rechargé depuis le localStorage)
