@@ -1,0 +1,85 @@
+/*
+    controller.js — Le "Controller" du pattern MVC : le clavier et la boucle de jeu.
+    Il écoute les touches du joueur, demande au Model de mettre l'état à jour,
+    puis demande à la View de redessiner. Il fait le lien entre les deux.
+*/
+
+import { state, KEYS, DIRECTIONS, GAME_STATUS } from "./config.js";
+import { changeDirection, updateGame, resetGame } from "./model.js";
+import { render } from "./view.js";
+
+// Identifiant du prochain tour de boucle programmé, pour pouvoir l'annuler
+let loopTimer = null;
+
+// On traduit la touche appuyée en action du jeu ("up", "pause", "start"...).
+// On parcourt KEYS et on renvoie le nom de l'action qui contient cette touche, ou null.
+function getActionFromKey(key) {
+    // On passe en minuscule pour que "Z" (majuscule verrouillée) marche comme "z"
+    const normalizedKey = key.length === 1 ? key.toLowerCase() : key;
+    const actions = Object.keys(KEYS);
+    return actions.find(action => KEYS[action].includes(normalizedKey)) || null;
+}
+
+// On lance la partie depuis le menu, ou on en relance une nouvelle après un game over.
+function startGame() {
+    if (state.status === GAME_STATUS.GAME_OVER) {
+        resetGame(state);
+    }
+    state.status = GAME_STATUS.PLAYING;
+    scheduleNextTick();
+}
+
+// Barre espace : on fige la partie, ou on la reprend si elle était déjà en pause.
+function togglePause() {
+    if (state.status === GAME_STATUS.PLAYING) {
+        state.status = GAME_STATUS.PAUSED;
+        clearTimeout(loopTimer);
+    } else if (state.status === GAME_STATUS.PAUSED) {
+        state.status = GAME_STATUS.PLAYING;
+        scheduleNextTick();
+    }
+    render(state);
+}
+
+// On réagit à une touche : chaque action n'est acceptée que dans le bon écran
+// (on ne tourne pas pendant la pause, on ne relance pas une partie déjà en cours...).
+function handleKeyDown(event) {
+    const action = getActionFromKey(event.key);
+    if (!action) return;
+
+    // Empêche les flèches et la barre espace de faire défiler la page
+    event.preventDefault();
+
+    const canStart = state.status === GAME_STATUS.MENU || state.status === GAME_STATUS.GAME_OVER;
+
+    if (action === "start" && canStart) {
+        startGame();
+    } else if (action === "pause") {
+        togglePause();
+    } else if (action in DIRECTIONS && state.status === GAME_STATUS.PLAYING) {
+        changeDirection(state, action);
+    }
+}
+
+// On programme le prochain pas du jeu dans state.speedMs millisecondes.
+// On utilise setTimeout (et pas setInterval) pour que la vitesse puisse changer
+// d'un pas à l'autre quand on passera au niveau supérieur.
+function scheduleNextTick() {
+    clearTimeout(loopTimer);
+    loopTimer = setTimeout(gameTick, state.speedMs);
+}
+
+// Un tour de boucle : le Model fait avancer le serpent, la View redessine,
+// puis on programme le tour suivant tant que la partie continue.
+function gameTick() {
+    updateGame(state);
+    render(state);
+    if (state.status === GAME_STATUS.PLAYING) {
+        scheduleNextTick();
+    }
+}
+
+// On branche l'écoute du clavier sur toute la page.
+export function initController() {
+    document.addEventListener("keydown", handleKeyDown);
+}

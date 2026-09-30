@@ -6,8 +6,15 @@
 
 import {
     CELL_SIZE, CANVAS_WIDTH, CANVAS_HEIGHT, COLUMNS, ROWS,
-    SPRITE_SIZE, SPRITES
+    SPRITE_SIZE, SPRITES, COLORS, GAME_STATUS
 } from "./config.js";
+
+// Texte affiché au centre du plateau selon l'écran (rien pendant la partie)
+const SCREEN_MESSAGES = {
+    [GAME_STATUS.MENU]: { title: "SNAKE", subtitle: "Appuie sur Entrée pour jouer" },
+    [GAME_STATUS.PAUSED]: { title: "PAUSE", subtitle: "Espace pour reprendre" },
+    [GAME_STATUS.GAME_OVER]: { title: "GAME OVER", subtitle: "Entrée pour rejouer" }
+};
 
 // L'outil de dessin du canvas et l'image des sprites, gardés ici après initView()
 let context = null;
@@ -106,6 +113,20 @@ function drawSnake(state) {
     }
 }
 
+// On pose un voile sombre sur le jeu et on écrit un titre et une consigne au centre.
+// Sert pour le menu, la pause et le game over.
+function drawMessage(title, subtitle) {
+    context.fillStyle = COLORS.overlay;
+    context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    context.fillStyle = COLORS.text;
+    context.textAlign = "center";
+    context.font = "bold 48px monospace";
+    context.fillText(title, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 16);
+    context.font = "20px monospace";
+    context.fillText(subtitle, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 28);
+}
+
 // On redessine toute la scène : le sol, les obstacles, les pommes, puis le serpent.
 // L'ordre compte : ce qui est dessiné en dernier apparaît au-dessus. Les obstacles
 // passent avant pour que le haut d'un arbre ne cache jamais une pomme ou le serpent.
@@ -114,6 +135,12 @@ export function render(state) {
     drawObstacles(state);
     drawFood(state);
     drawSnake(state);
+
+    // Hors partie en cours, on affiche le message de l'écran par-dessus le jeu
+    const message = SCREEN_MESSAGES[state.status];
+    if (message) {
+        drawMessage(message.title, message.subtitle);
+    }
 }
 
 // On met à jour les chiffres affichés au-dessus du canvas (score, niveau, record).

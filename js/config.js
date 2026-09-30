@@ -98,6 +98,17 @@ export const DIRECTIONS = {
 };
 
 
+// Position du serpent au début de chaque partie. La case 0 est la tête.
+export const INITIAL_SNAKE = [
+    { x: 10, y: 10 },
+    { x: 9, y: 10 },
+    { x: 8, y: 10 }
+];
+
+// Direction du serpent au début de chaque partie
+export const INITIAL_DIRECTION = DIRECTIONS.right;
+
+
 // ----- 7. La spritesheet -----
 
 // Chemin de l'image qui contient tous les dessins du jeu
@@ -175,20 +186,17 @@ export const GAME_STATUS = {
     MENU: "menu",           // écran d'accueil, avant de jouer
     PLAYING: "playing",     // partie en cours
     PAUSED: "paused",       // partie figée (barre espace)
-    GAME_OVER: "game-over"  // le serpent a percuté un mur ou son corps
+    GAME_OVER: "game-over"  // le serpent a percuté un mur, un obstacle ou son corps
 };
 
 // Toutes les données qui changent pendant la partie, regroupées dans un seul objet.
 // C'est le "Model" du pattern MVC : la vue le lit pour dessiner, le contrôleur le modifie.
 export const state = {
     // Le serpent est une liste de cases {x, y}. La case 0 est la tête, la dernière la queue.
-    snake: [
-        { x: 10, y: 10 },
-        { x: 9, y: 10 },
-        { x: 8, y: 10 }
-    ],
-    direction: DIRECTIONS.right,     // direction actuelle du serpent
-    nextDirection: DIRECTIONS.right, // direction demandée au clavier, appliquée au prochain pas
+    // On copie chaque case pour ne jamais modifier INITIAL_SNAKE en déplaçant le serpent.
+    snake: INITIAL_SNAKE.map(part => ({ ...part })),
+    direction: INITIAL_DIRECTION,     // direction actuelle du serpent
+    nextDirection: INITIAL_DIRECTION, // direction demandée au clavier, appliquée au prochain pas
     food: { x: 15, y: 10 },          // position de la pomme normale
     obstacles: [],                   // obstacles {x, y, sprite}, tirés au hasard par createObstacles()
     specialFood: null,               // pomme spéciale {x, y, expiresAt} ou null s'il n'y en a pas
