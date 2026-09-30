@@ -1,20 +1,19 @@
 /*
     view.js — La "View" du pattern MVC : tout ce qui dessine dans le canvas.
     Ce fichier lit l'état du jeu (state) mais ne le modifie jamais.
-    Il découpe la spritesheet pour afficher le sol, le serpent et les pommes.
+    Il découpe la spritesheet pour afficher le sol, le serpent et les pommes,
+    et dessine par-dessus les écrans de menu, pause, game over, pseudo et classement.
 */
 
 import {
     CELL_SIZE, CANVAS_WIDTH, CANVAS_HEIGHT, COLUMNS, ROWS,
-    SPRITE_SIZE, SPRITES, COLORS, GAME_STATUS
+    SPRITE_SIZE, SPRITES, COLORS, GAME_STATUS, MENU_OPTIONS, PLAYER_NAME_MAX_LENGTH
 } from "./config.js";
+import { getBestScore } from "./leaderboard.js";
 
-// Texte affiché au centre du plateau selon l'écran (rien pendant la partie)
-const SCREEN_MESSAGES = {
-    [GAME_STATUS.MENU]: { title: "SNAKE", subtitle: "Appuie sur Entrée pour jouer" },
-    [GAME_STATUS.PAUSED]: { title: "PAUSE", subtitle: "Espace pour reprendre" },
-    [GAME_STATUS.GAME_OVER]: { title: "GAME OVER", subtitle: "Entrée pour rejouer" }
-};
+// Milieu du canvas : tous les écrans sont centrés autour de ce point
+const CENTER_X = CANVAS_WIDTH / 2;
+const CENTER_Y = CANVAS_HEIGHT / 2;
 
 // L'outil de dessin du canvas et l'image des sprites, gardés ici après initView()
 let context = null;
@@ -115,19 +114,92 @@ function drawSnake(state) {
     }
 }
 
-// On pose un voile sombre sur le jeu et on écrit un titre et une consigne au centre.
-// Sert pour le menu, la pause et le game over.
-function drawMessage(title, subtitle) {
+// On pose un voile sombre sur tout le jeu pour que le texte des écrans soit lisible.
+function drawOverlay() {
     context.fillStyle = COLORS.overlay;
     context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-    context.fillStyle = COLORS.text;
-    context.textAlign = "center";
-    context.font = "bold 48px monospace";
-    context.fillText(title, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 16);
-    context.font = "20px monospace";
-    context.fillText(subtitle, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 28);
 }
+
+// On écrit une ligne de texte centrée horizontalement, à la hauteur y.
+function drawCenteredText(text, y, size, color = COLORS.text) {
+    context.fillStyle = color;
+    context.textAlign = "center";
+    context.font = `bold ${size}px monospace`;
+    context.fillText(text, CENTER_X, y);
+}
+
+// Écran d'accueil : le titre, puis la liste des options.
+// L'option choisie est entourée de flèches et écrite en jaune.
+function drawMenuScreen(state) {
+    drawCenteredText("SNAKE", CENTER_Y - 120, 64);
+    MENU_OPTIONS.forEach((option, index) => {
+        const isSelected = index === state.menuIndex;
+        const label = isSelected ? `> ${option.label} <` : option.label;
+        const color = isSelected ? COLORS.highlight : COLORS.text;
+        drawCenteredText(label, CENTER_Y + index * 50, 28, color);
+    });
+    drawCenteredText("↑ ↓ pour choisir — Entrée pour valider", CENTER_Y + 180, 18);
+}
+
+// Écran de pause : on rappelle comment reprendre ou quitter.
+function drawPauseScreen() {
+    drawCenteredText("PAUSE", CENTER_Y - 20, 48);
+    drawCenteredText("Espace : reprendre — Échap : menu", CENTER_Y + 30, 20);
+}
+
+// Écran de fin de partie (score hors du top 10, ou pseudo passé avec Échap).
+function drawGameOverScreen(state) {
+    drawCenteredText("GAME OVER", CENTER_Y - 40, 48);
+    drawCenteredText(`Score : ${state.score}`, CENTER_Y + 10, 28);
+    drawCenteredText("Entrée : rejouer — Échap : menu", CENTER_Y + 60, 20);
+}
+
+// Écran de saisie du pseudo quand le score entre dans le top 10.
+// Le "_" ne clignote pas : il montre juste où la prochaine lettre va s'écrire.
+function drawNameEntryScreen(state) {
+    const isNewRecord = state.score > getBestScore(state.leaderboard);
+    drawCenteredText(isNewRecord ? "NOUVEAU RECORD !" : "TOP 10 !", CENTER_Y - 100, 48, COLORS.highlight);
+    drawCenteredText(`Score : ${state.score}`, CENTER_Y - 50, 28);
+    drawCenteredText("Ton pseudo :", CENTER_Y + 10, 24);
+
+    const cursor = state.playerName.length < PLAYER_NAME_MAX_LENGTH ? "_" : "";
+    drawCenteredText(state.playerName + cursor, CENTER_Y + 60, 36, COLORS.highlight);
+    drawCenteredText("Entrée : valider — Échap : ne pas enregistrer", CENTER_Y + 130, 18);
+}
+
+// On met en forme une ligne du classement, par exemple " 1. ETIENNE       42".
+// La police monospace donne la même largeur à chaque lettre, donc les colonnes s'alignent.
+function formatLeaderboardRow(entry, index) {
+    const rank = String(index + 1).padStart(2, " ");
+    const name = entry.name.padEnd(PLAYER_NAME_MAX_LENGTH, " ");
+    const score = String(entry.score).padStart(5, " ");
+    return `${rank}. ${name} ${score}`;
+}
+
+// Écran du classement : le top 10, avec la ligne du score qu'on vient d'enregistrer en jaune.
+function drawLeaderboardScreen(state) {
+    const top = CENTER_Y - 250;
+    drawCenteredText("CLASSEMENT", top, 48);
+
+    if (state.leaderboard.length === 0) {
+        drawCenteredText("Aucun score pour l'instant", CENTER_Y, 24);
+    }
+    state.leaderboard.forEach((entry, index) => {
+        const color = index === state.lastRank ? COLORS.highlight : COLORS.text;
+        drawCenteredText(formatLeaderboardRow(entry, index), top + 70 + index * 40, 24, color);
+    });
+
+    drawCenteredText("Entrée ou Échap : retour au menu", CENTER_Y + 250, 18);
+}
+
+// Quelle fonction dessine l'écran affiché par-dessus le jeu (aucune pendant la partie)
+const SCREEN_DRAWERS = {
+    [GAME_STATUS.MENU]: drawMenuScreen,
+    [GAME_STATUS.PAUSED]: drawPauseScreen,
+    [GAME_STATUS.GAME_OVER]: drawGameOverScreen,
+    [GAME_STATUS.NAME_ENTRY]: drawNameEntryScreen,
+    [GAME_STATUS.LEADERBOARD]: drawLeaderboardScreen
+};
 
 // On redessine toute la scène : le sol, les obstacles, les pommes, puis le serpent.
 // L'ordre compte : ce qui est dessiné en dernier apparaît au-dessus. Les obstacles
@@ -138,18 +210,21 @@ export function render(state) {
     drawFood(state);
     drawSnake(state);
 
-    // Hors partie en cours, on affiche le message de l'écran par-dessus le jeu
-    const message = SCREEN_MESSAGES[state.status];
-    if (message) {
-        drawMessage(message.title, message.subtitle);
+    // Hors partie en cours, on assombrit le jeu et on dessine l'écran par-dessus
+    const drawScreen = SCREEN_DRAWERS[state.status];
+    if (drawScreen) {
+        drawOverlay();
+        drawScreen(state);
     }
 }
 
 // On met à jour les chiffres affichés au-dessus du canvas (score, niveau, record).
+// Le record suit le score en direct dès qu'on dépasse le premier du classement.
 export function updateHud(state) {
+    const bestScore = Math.max(getBestScore(state.leaderboard), state.score);
     document.getElementById("score").textContent = state.score;
     document.getElementById("level").textContent = state.level;
-    document.getElementById("best-score").textContent = state.bestScore;
+    document.getElementById("best-score").textContent = bestScore;
 }
 
 // Si la spritesheet n'a pas pu être chargée, on l'écrit directement dans le canvas

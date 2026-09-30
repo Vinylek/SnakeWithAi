@@ -72,6 +72,7 @@ export const COLORS = {
     food: "#e53935",         // pomme normale (secours)
     specialFood: "#fdd835",  // pomme spéciale (secours)
     text: "#ffffff",         // texte des écrans menu / pause / game over
+    highlight: "#fdd835",    // option choisie dans le menu, nouvelle ligne du classement
     overlay: "rgba(0, 0, 0, 0.6)" // voile sombre posé sur le jeu derrière les textes
 };
 
@@ -85,8 +86,10 @@ export const KEYS = {
     down: ["ArrowDown", "s"],
     left: ["ArrowLeft", "q", "a"],
     right: ["ArrowRight", "d"],
-    pause: [" "],       // barre espace
-    start: ["Enter"]    // lancer / relancer une partie
+    pause: [" "],          // barre espace
+    confirm: ["Enter"],    // valider (choix du menu, pseudo, rejouer)
+    back: ["Escape"],      // revenir au menu
+    erase: ["Backspace"]   // effacer la dernière lettre du pseudo
 };
 
 // Les 4 directions possibles : de combien de cases la tête bouge en x et en y
@@ -173,10 +176,25 @@ export const SPRITES = {
 };
 
 
-// ----- 8. Le meilleur score -----
+// ----- 8. Le menu et le classement -----
 
-// Nom de la clé sous laquelle le record est rangé dans le localStorage du navigateur
-export const BEST_SCORE_STORAGE_KEY = "snake-best-score";
+// Les choix du menu principal : le texte affiché et l'action lancée par Entrée
+export const MENU_OPTIONS = [
+    { label: "Jouer", action: "play" },
+    { label: "Classement", action: "leaderboard" }
+];
+
+// Nombre de scores gardés dans le classement (le top 10)
+export const LEADERBOARD_SIZE = 10;
+
+// Nom de la clé sous laquelle le classement est rangé dans le localStorage du navigateur
+export const LEADERBOARD_STORAGE_KEY = "snake-leaderboard";
+
+// Nombre maximum de caractères du pseudo tapé pour le classement
+export const PLAYER_NAME_MAX_LENGTH = 10;
+
+// Pseudo utilisé si le joueur valide sans rien taper
+export const DEFAULT_PLAYER_NAME = "ANONYME";
 
 
 // ----- 9. L'état du jeu -----
@@ -186,7 +204,9 @@ export const GAME_STATUS = {
     MENU: "menu",           // écran d'accueil, avant de jouer
     PLAYING: "playing",     // partie en cours
     PAUSED: "paused",       // partie figée (barre espace)
-    GAME_OVER: "game-over"  // le serpent a percuté un mur, un obstacle ou son corps
+    GAME_OVER: "game-over", // le serpent a percuté un mur, un obstacle ou son corps
+    NAME_ENTRY: "name-entry", // score dans le top 10 : le joueur tape son pseudo
+    LEADERBOARD: "leaderboard" // affichage du classement
 };
 
 // Toutes les données qui changent pendant la partie, regroupées dans un seul objet.
@@ -201,7 +221,10 @@ export const state = {
     obstacles: [],                   // obstacles {x, y, sprite}, tirés au hasard par createObstacles()
     specialFood: null,               // pomme spéciale {x, y, expiresAt} ou null s'il n'y en a pas
     score: 0,                        // points de la partie en cours
-    bestScore: 0,                    // meilleur score (rechargé depuis le localStorage)
+    leaderboard: [],                 // top 10 {name, score}, du meilleur au moins bon (localStorage)
+    lastRank: -1,                    // place du dernier score enregistré (surlignée), -1 si aucune
+    playerName: "",                  // pseudo en cours de saisie sur l'écran NAME_ENTRY
+    menuIndex: 0,                    // option du menu actuellement sélectionnée
     level: 1,                        // niveau actuel, augmente toutes les FOOD_PER_LEVEL pommes
     speedMs: INITIAL_SPEED_MS,       // intervalle actuel entre deux déplacements
     status: GAME_STATUS.MENU         // écran affiché : menu / en cours / pause / game over
