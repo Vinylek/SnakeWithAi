@@ -15,7 +15,7 @@ Dans un fichier `config.js`, définis les constantes :
 - les variables d'état du jeu (serpent, direction, nourriture, score, meilleur score, état : menu / en cours / pause / game over).
 Chaque constante doit avoir un commentaire expliquant son rôle.
 
-## 3. Fonctionnalités (plusieurs, pour maximiser le nombre)
+## 3. Fonctionnalités
 - Déplacement du serpent aux flèches ET aux touches ZQSD/WASD, sans demi-tour immédiat
 - Nourriture générée aléatoirement (jamais sur le serpent)
 - Croissance et score
@@ -30,7 +30,7 @@ Liste précisément ces fonctionnalités et leur nombre dans le README.
 ## 4. Design pattern (obligatoire et justifié)
 Choisis et applique un design pattern adapté, par exemple MVC (Model = état du jeu, View = affichage canvas, Controller = clavier + boucle de jeu), ou State/Observer si c'est plus pertinent. Explique dans le README : quel pattern, où il apparaît dans le code (quel fichier joue quel rôle), pourquoi ce choix, et ses avantages/limites, avec un schéma ASCII ou Mermaid.
 
-## 5. Commentaires (humanisés)
+## 5. Commentaires 
 - Chaque fichier commence par un commentaire d'en-tête expliquant son rôle.
 - Chaque fonction a un commentaire au-dessus, écrit comme si tu l'expliquais à un camarade, en français, ton naturel (ex : "On vérifie si la tête du serpent touche la nourriture : si oui, il grandit et on gagne un point").
 - Commente aussi les passages non évidents à l'intérieur des fonctions, sans commenter l'évidence.
@@ -49,12 +49,8 @@ Le README doit contenir :
 
 Aucune fonction ne doit manquer dans le README : vérifie à la fin que chaque fonction du code y figure.
 
-## 7. Prompts
-Crée un fichier `PROMPTS.md` qui recense les prompts utilisés pour construire le projet (y compris celui-ci), avec pour chacun : l'objectif, le prompt, le résultat obtenu, et ce que j'ai dû corriger ou préciser. Ajoute une courte section sur les bonnes pratiques de prompting apprises.
-
-## 8. Méthode de travail
+## 7. Méthode de travail
 1. Annonce d'abord ton plan (architecture + liste des fichiers + pattern choisi), puis attends ma validation.
 2. Génère ensuite le code, fichier par fichier.
-3. Génère le README.md et le PROMPTS.md.
+3. Génère le README.md.
 4. Fais une vérification finale : le jeu se lance, toutes les fonctionnalités marchent, chaque fonction est commentée ET documentée.
-5. Termine par un résumé de 10 lignes maximum que je pourrai utiliser pour ma soutenance orale, avec 5 questions probables du jury et leurs réponses.
